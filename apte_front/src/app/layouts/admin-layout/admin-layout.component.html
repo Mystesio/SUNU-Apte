@@ -1,0 +1,24 @@
+
+    <!--<div class="sidebar" data-color="danger" data-background-color="white" data-image="./assets/img/sidebar-1.jpg">
+        <app-sidebar></app-sidebar> 
+        <div class="sidebar-background" style="background-image: url(./assets/img/sidebar-4.jpg)"></div>
+    </div>-->
+  
+    
+      
+      <app-navbar *ngIf="shouldShowNavbar()"></app-navbar>
+      <router-outlet></router-outlet>
+      <div *ngIf="isMaps('maps')">
+        <app-footer></app-footer>
+      </div>
+      
+  
+        <!-- Your main content here -->
+      
+      
+    <!--<div class="main-panel">    
+    </div> -->
+   
+<!-- Buy-Modal-angular -->
+
+

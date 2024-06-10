@@ -1,0 +1,25 @@
+<div class="login-page">
+  <div class="login-form">
+    <h2>Connexion</h2>
+    <form (ngSubmit)="login()">
+      <div class="form-group">
+        <label for="email">Email :</label>
+        <input type="email" id="email" [(ngModel)]="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Mot de passe :</label>
+        <input type="password" id="password" [(ngModel)]="password" name="password" required>
+      </div> 
+      <div class="form-group remember-me">
+        <input type="checkbox" id="remember-me" name="remember-me">
+        <label for="remember-me">Garder les identifiants</label>
+      </div>
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+      <div class="form-group">
+        <button type="submit" class="btn-login">Connexion</button>
+      </div>
+    </form>
+  </div>
+</div>
