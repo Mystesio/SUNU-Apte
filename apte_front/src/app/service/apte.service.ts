@@ -28,26 +28,14 @@ export class ApteService {
   }
 
   executeScript(script: string): Observable<string> {
-    // Start the execution and return an observable
-    return new Observable(observer => {
-      this.http.post<any>(this.apiUrl, { script }).subscribe({
-        next: response => {
-          if (response.prompt) {
-            this.userInputSubject.next(response.prompt);
-          } else {
-            observer.next(response.output);
-            observer.complete();
-          }
-        },
-        error: err => {
-          this.handleError(err).subscribe();
-          observer.error(err);
-        }
-      });
-    });
+    return this.http.post(`${this.apiUrl}/execute`, { script, input: '' }, { responseType: 'text' });
   }
 
-  sendUserInput(input: string) {
-    this.userInputSubject.next(input);
+  getPrompt(): Observable<string> {
+    return this.http.get(`${this.apiUrl}/prompt`, { responseType: 'text' });
+  }
+
+  sendResponse(response: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/response`, response);
   }
 }
