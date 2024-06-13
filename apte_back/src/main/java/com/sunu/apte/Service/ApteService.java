@@ -17,36 +17,54 @@ public class ApteService {
             return "Le chemin du script n'a pas été spécifié.";
         }
 
-        String command = "wsl " + script;
+        // Chemin complet du répertoire contenant les scripts pour WSL
+        String scriptDirectory = "Users/william.amoussou/Documents/SUNU-APTE/apte_front/src/app/SHELL/";
+  
 
-        Process process = Runtime.getRuntime().exec(command);
+       
 
-        BufferedReader scriptReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-        OutputStreamWriter scriptWriter = new OutputStreamWriter(process.getOutputStream());
+        // Commande pour changer de répertoire et exécuter le script
+        String command ="wsl sh -c '" + scriptDirectory + " && ./" + script+ "'";
+        System.out.println("Executing command: " + command);
+        
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        Process process = processBuilder.start();
+        System.out.println("Process started: " + process.toString());
 
-        StringBuilder output = new StringBuilder();
-        String line;
+        try (BufferedReader scriptReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+             BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+             BufferedWriter scriptWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))) {
 
-        while ((line = scriptReader.readLine()) != null) {
-            output.append(line).append("\n");
+            StringBuilder output = new StringBuilder();
+            String line;
 
-            if (line.startsWith("read -p")) {
-                String userInput = inputHandler.getUserInput(line);
-                scriptWriter.write(userInput + "\n");
-                scriptWriter.flush();
+            while ((line = scriptReader.readLine()) != null) {
+                output.append(line).append("\n");
+
+                if (line.startsWith("read -p")) {
+                    System.out.println("Prompt detected: " + line);
+                    String userInput = inputHandler.getUserInput(line);
+                    System.out.println("User input: " + userInput);
+                    scriptWriter.write(userInput + "\n");
+                    scriptWriter.flush();
+                }
             }
-        }
 
-        while ((line = errorReader.readLine()) != null) {
-            output.append("ERROR: ").append(line).append("\n");
-        }
+            while ((line = errorReader.readLine()) != null) {
+                output.append("ERROR: ").append(line).append("\n");
+            }
 
-        int exitCode = process.waitFor();
-        if (exitCode == 0) {
-            return "Script exécuté avec succès\n" + output.toString();
-        } else {
-            return "Échec de l'exécution du script\n" + output.toString();
+            int exitCode = process.waitFor();
+            System.out.println("Process exit code: " + exitCode);
+            if (exitCode == 0) {
+                return "Script exécuté avec succès\n" + output.toString();
+            } else {
+                return "Échec de l'exécution du script\n" + output.toString();
+            }
+        } catch (IOException | InterruptedException e) {
+            process.destroy();
+            System.out.println("Exception occurred: " + e.getMessage());
+            throw e;
         }
     }
 
@@ -54,4 +72,3 @@ public class ApteService {
         String getUserInput(String prompt);
     }
 }
-

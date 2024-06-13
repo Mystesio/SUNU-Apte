@@ -49,7 +49,8 @@ import { MatDialogModule } from '@angular/material/dialog';
     MapsComponent,
     NotificationsComponent,
     UpgradeComponent,
-  ]
+  ],
+  entryComponents: [UserInputDialogComponent]  
 })
 
 export class AdminLayoutModule {}

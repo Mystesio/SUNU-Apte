@@ -7,7 +7,7 @@ import { Observable, Subject, throwError } from 'rxjs';
 })
 export class ApteService {
 
-  private apiUrl = 'http://localhost:8086/shell/execute'; // Adjust the URL as needed
+  private apiUrl = 'http://localhost:8086/shell'; // Adjust the URL as needed
   private errors: string[] = [];
   private userInputSubject = new Subject<string>();
   userInput$ = this.userInputSubject.asObservable();

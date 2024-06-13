@@ -1,7 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
 import { ApteService } from 'app/service/apte.service';
-import { UserInputDialogComponent } from 'app/user-input-dialog/user-input-dialog.component';
 
 interface Country {
   name: string;
@@ -35,7 +33,7 @@ export class DashboardComponent implements OnInit {
   scriptOutput: string = '';
   isPromptPending: boolean = false;
 
-  constructor(private apteService: ApteService, public dialog: MatDialog,private cdr: ChangeDetectorRef) { }
+  constructor(private apteService: ApteService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit() {
     this.updateErrors();
@@ -60,15 +58,20 @@ export class DashboardComponent implements OnInit {
   }
 
   executeScript(script: string): void {
+    console.log(`Executing script: ${script}`);
     this.apteService.executeScript(script).subscribe({
       next: response => {
+        console.log(`Script executed successfully: ${script}`);
         this.scriptOutput = response;
-        this.handlePrompts();
+        this.cdr.detectChanges(); // Detect changes
+        this.handlePrompts();  // Start handling prompts immediately after script execution
       },
       error: err => {
+        console.log(`Error executing script: ${script}`);
         this.scriptOutput = 'Error: ' + err;
         console.log(err);
         this.updateErrors();
+        this.cdr.detectChanges(); // Detect changes
       }
     });
   }
@@ -76,19 +79,15 @@ export class DashboardComponent implements OnInit {
   handlePrompts(): void {
     this.apteService.getPrompt().subscribe({
       next: prompt => {
-        const dialogRef = this.dialog.open(UserInputDialogComponent, {
-          width: '250px',
-          data: { prompt: prompt }
-        });
-
-        dialogRef.afterClosed().subscribe(result => {
-          if (result) {
-            this.sendResponse(result);
-          }
-        });
+        const result = window.prompt(prompt, '');
+        if (result !== null) {
+          this.sendResponse(result);
+        }
+        this.cdr.detectChanges(); // Detect changes
       },
       error: err => {
         console.log('Error getting prompt:', err);
+        this.cdr.detectChanges(); // Detect changes
       }
     });
   }
@@ -97,9 +96,11 @@ export class DashboardComponent implements OnInit {
     this.apteService.sendResponse(response).subscribe({
       next: () => {
         this.handlePrompts(); // Continue to handle the next prompt if any
+        this.cdr.detectChanges(); // Detect changes
       },
       error: err => {
         console.log('Error sending response:', err);
+        this.cdr.detectChanges(); // Detect changes
       }
     });
   }
@@ -108,45 +109,54 @@ export class DashboardComponent implements OnInit {
     country.menuVisible = !country.menuVisible;
     this.cdr.detectChanges();
   }
-  
 
   onLaunch(): void {
-    this.executeScript('app/SHELL/launch.sh');
+    console.log('Launching environment...');
+    this.executeScript('launch.sh');
   }
 
   onLaunchAll(): void {
-    this.executeScript('app/SHELL/launch-all.sh');
+    console.log('Launching all environments...');
+    this.executeScript('launch-all.sh');
   }
 
   onMajAddonsSunupac(): void {
-    this.executeScript('app/SHELL/maj_addons_sunupac.sh');
+    console.log('Updating Sunupac addons...');
+    this.executeScript('maj_addons_sunupac.sh');
   }
 
   onMajDbSunupac(): void {
-    this.executeScript('app/SHELL/maj_db_sunupac.sh');
+    console.log('Updating Sunupac database...');
+    this.executeScript('maj_db_sunupac.sh');
   }
 
   onMajPortSunupac(): void {
-    this.executeScript('app/SHELL/maj_port_sunupac.sh');
+    console.log('Updating Sunupac port...');
+    this.executeScript('maj_port_sunupac.sh');
   }
 
   onSupprDbSunupac(): void {
-    this.executeScript('app/SHELL/suppr_db_sunupac.sh');
+    console.log('Deleting Sunupac database...');
+    this.executeScript('suppr_db_sunupac.sh');
   }
 
   onSupprAllDbSunupac(): void {
-    this.executeScript('app/SHELL/suppr-alldb_sunupac.sh');
+    console.log('Deleting all Sunupac databases...');
+    this.executeScript('suppr-alldb_sunupac.sh');
   }
 
   onMajDbSunulife(): void {
-    this.executeScript('app/SHELL/maj_db_sunulife.sh');
+    console.log('Updating Sunulife database...');
+    this.executeScript('maj_db_sunulife.sh');
   }
 
   onSupprDbSunulife(): void {
-    this.executeScript('app/SHELL/suppr_db_sunulife.sh');
+    console.log('Deleting Sunulife database...');
+    this.executeScript('suppr_db_sunulife.sh');
   }
 
   onPreprod(): void {
-    this.executeScript('app/SHELL/preprod.sh');
+    console.log('Sending to pre-production...');
+    this.executeScript('preprod.sh');
   }
 }
