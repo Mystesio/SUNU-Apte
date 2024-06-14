@@ -17,17 +17,16 @@ public class ApteService {
             return "Le chemin du script n'a pas été spécifié.";
         }
 
-        // Chemin complet du répertoire contenant les scripts pour WSL
-        String scriptDirectory = "Users/william.amoussou/Documents/SUNU-APTE/apte_front/src/app/SHELL/";
-  
-
-       
-
-        // Commande pour changer de répertoire et exécuter le script
-        String command ="wsl sh -c '" + scriptDirectory + " && ./" + script+ "'";
-        System.out.println("Executing command: " + command);
+        // Chemin complet du script pour WSL
+        String scriptDirectory = "/mnt/c/Users/william.amoussou/Documents/SUNU-APTE/apte_back/SHELL";
         
+
+        // Commande pour exécuter le script avec WSL
+        String[] command = {"wsl", "cd", scriptDirectory, "&&", "./" + script};
+
         ProcessBuilder processBuilder = new ProcessBuilder(command);
+        System.out.println("Executing command: " + String.join(" ", command));
+        
         Process process = processBuilder.start();
         System.out.println("Process started: " + process.toString());
 
@@ -72,3 +71,4 @@ public class ApteService {
         String getUserInput(String prompt);
     }
 }
+
