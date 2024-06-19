@@ -32,20 +32,19 @@
                     </button>
                     <div *ngIf="country.menuVisible" class="menu-burger">
                       <div class="button-row">
-                        <h1>Sunupac</h1> 
-                        <button class="btn btn-custom" (click)="onLaunch()"><small>Démarrer un environnement</small></button>
-                        <button class="btn btn-custom" (click)="onLaunchAll()"><small>MAJ à jour un environnement</small></button>
-                        <button class="btn btn-custom" (click)="onPreprod()"><small>Envoi en Preproduction</small></button>
+                        <h2>Sunupac</h2> <!-- Changed to h2 and applied a smaller size in CSS -->
+                        <button class="btn btn-custom btn-small" (click)="onLaunch(country.name)">Démarrer un environnement</button>
+                        <button class="btn btn-custom btn-small" (click)="onPreprod(country.name)">Envoi en Preproduction</button>
                       </div>
                       <div class="button-row">
-                        <button class="btn btn-custom" (click)="onMajAddonsSunupac()"><small>MAJ sunupac addons</small></button>
-                        <button class="btn btn-custom" (click)="onMajPortSunupac()"><small>MAJ sunupac port</small></button>
-                        <button class="btn btn-custom" (click)="onMajDbSunupac()"><small>MAJ sunupac Base de données</small></button>
+                        <button class="btn btn-custom btn-small" (click)="onMajAddonsSunupac(country.name)">MAJ SUNUPAC addons</button>
+                        <button class="btn btn-custom btn-small" (click)="onMajPortSunupac(country.name)">MAJ SUNUPAC port</button>
+                        <button class="btn btn-custom btn-small" (click)="onMajDbSunupac(country.name)">MAJ SUNUPAC Base de données</button>
                       </div>
                       <div class="button-row">
-                        <h1>Sunulife</h1>
-                        <button class="btn btn-custom"><small>Démarrer un environnement</small></button>
-                        <button class="btn btn-custom" (click)="onMajDbSunulife()"><small>MAJ un environnement</small></button>
+                        <h2>Sunulife</h2> <!-- Changed to h2 and applied a smaller size in CSS -->
+                        <button class="btn btn-custom btn-small" (click)="onMajDbSunulife(country.name)">Démarrer SUNULIFE</button>
+                        <button class="btn btn-custom btn-small" (click)="onMajDbSunulife(country.name)">MAJ Base de données</button>
                       </div>
                     </div>
                   </td>
@@ -121,3 +120,4 @@
     </div>
   </div>
 </div>
+

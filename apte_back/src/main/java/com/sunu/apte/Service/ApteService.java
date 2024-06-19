@@ -20,9 +20,8 @@ public class ApteService {
         // Chemin complet du script pour WSL
         String scriptDirectory = "/mnt/c/Users/william.amoussou/Documents/SUNU-APTE/apte_back/SHELL";
         
-
         // Commande pour exécuter le script avec WSL
-        String[] command = {"wsl", "cd", scriptDirectory, "&&", "./" + script};
+        String[] command = {"wsl.exe", "-e", "bash", "-c", "cd " + scriptDirectory + " && ./" + script};
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         System.out.println("Executing command: " + String.join(" ", command));
@@ -38,9 +37,10 @@ public class ApteService {
             String line;
 
             while ((line = scriptReader.readLine()) != null) {
+                System.out.println("Script output: " + line);  // Ajoutez ce journal
                 output.append(line).append("\n");
 
-                if (line.startsWith("read -p")) {
+                if (line.contains("read -p")) {
                     System.out.println("Prompt detected: " + line);
                     String userInput = inputHandler.getUserInput(line);
                     System.out.println("User input: " + userInput);
@@ -50,6 +50,7 @@ public class ApteService {
             }
 
             while ((line = errorReader.readLine()) != null) {
+                System.out.println("Error output: " + line);  // Ajoutez ce journal
                 output.append("ERROR: ").append(line).append("\n");
             }
 

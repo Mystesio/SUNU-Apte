@@ -21,31 +21,43 @@ public class ApteController {
     private final BlockingQueue<String> responseQueue = new LinkedBlockingQueue<>();
 
     @PostMapping("/execute")
-    public String executeScript(@RequestBody ScriptRequest request) {
-        try {
+    public String handleRequest(@RequestBody ScriptRequest request, @RequestParam(required = false) String response) {
+        // Handle script execution
+        if (request.getScript() != null) {
             apteService.setScript(request.getScript());
-            return apteService.executeScript(prompt -> {
-                try {
-                    promptQueue.put(prompt);
-                    return responseQueue.take();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return "Erreur: interruption lors de la lecture de l'entrée utilisateur.";
-                }
-            });
-        } catch (IOException | InterruptedException e) {
-            return "Erreur lors de l'exécution du script: " + e.getMessage();
+            try {
+                return apteService.executeScript(prompt -> {
+                    try {
+                        promptQueue.put(prompt);
+                        return responseQueue.take();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return "Erreur: interruption lors de la lecture de l'entrée utilisateur.";
+                    }
+                });
+            } catch (IOException | InterruptedException e) {
+                return "Erreur lors de l'exécution du script: " + e.getMessage();
+            }
         }
-    }
 
-    @GetMapping("/prompt")
-    public String getPrompt() throws InterruptedException {
-        return promptQueue.take();
-    }
+        // Handle user response
+        if (response != null) {
+            try {
+                responseQueue.put(response);
+                return "Réponse reçue";
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return "Erreur: interruption lors de l'envoi de la réponse utilisateur.";
+            }
+        }
 
-    @PostMapping("/response")
-    public void postResponse(@RequestBody String response) throws InterruptedException {
-        responseQueue.put(response);
+        // Handle prompt request
+        try {
+            return promptQueue.take();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "Erreur: interruption lors de la récupération du prompt.";
+        }
     }
 }
 

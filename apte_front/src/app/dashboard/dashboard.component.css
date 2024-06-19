@@ -97,3 +97,16 @@
     max-width: 100%; /* Ensure cards don't overflow */
 }
 
+.menu-burger {
+    margin-top: 10px; /* Adjust the margin as needed */
+  }
+  
+  .menu-burger h2 {
+    font-size: 1.2em; /* Reduce the size of the titles */
+  }
+  
+  .btn-small {
+    font-size: 0.8em; /* Reduce the size of the buttons */
+    padding: 5px 10px; /* Adjust padding to make the buttons smaller */
+  }
+  

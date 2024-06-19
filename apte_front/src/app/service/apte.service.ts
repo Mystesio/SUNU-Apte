@@ -1,13 +1,14 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, Subject, throwError } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApteService {
 
-  private apiUrl = 'http://localhost:8086/shell'; // Adjust the URL as needed
+  private apiUrl = 'http://localhost:8086/shell'; // Ajuster l'URL si nécessaire
   private errors: string[] = [];
   private userInputSubject = new Subject<string>();
   userInput$ = this.userInputSubject.asObservable();
@@ -28,14 +29,32 @@ export class ApteService {
   }
 
   executeScript(script: string): Observable<string> {
-    return this.http.post(`${this.apiUrl}/execute`, { script, input: '' }, { responseType: 'text' });
+    // Commencez par exécuter le script
+    return this.http.post(`${this.apiUrl}/execute`, { script }, { responseType: 'text' })
+      .pipe(
+        catchError(this.handleError.bind(this)),
+        switchMap(response => {
+          // Après l'exécution du script, attendez les prompts
+          return this.getPrompt();
+        })
+      );
   }
 
   getPrompt(): Observable<string> {
-    return this.http.get(`${this.apiUrl}/prompt`, { responseType: 'text' });
+    return this.http.get(`${this.apiUrl}/execute`, { responseType: 'text' })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
-  sendResponse(response: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/response`, response);
+  sendResponse(response: string): Observable<string> {
+    // Envoyez la réponse et attendez le prochain prompt ou la fin de l'exécution
+    return this.http.post(`${this.apiUrl}/execute`, { response }, { responseType: 'text' })
+      .pipe(
+        catchError(this.handleError.bind(this)),
+        switchMap(resp => {
+          // Après avoir envoyé la réponse, attendez le prochain prompt
+          return this.getPrompt();
+        })
+      );
   }
 }
+
