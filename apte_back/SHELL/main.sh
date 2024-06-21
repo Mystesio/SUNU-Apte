@@ -25,6 +25,8 @@ backup_life_dir="/mnt/backup_db/VIE"
 backup_webservices="/mnt/backup_webservices"
 webservices_directory=/home/sunupac/webserservices/"$pays"
 Preprod_dir=/home/sunupac/Preprod/"$pays"
+web_server_user="sunupac"
+web_server_ip="10.12.13.9"
 
 
 
@@ -61,7 +63,13 @@ function ssh_app() {
     ssh "$app_server_user@$app_server_ip" "$command_to_run"
 }
 
-#Accès au serveur APP via SSH
+#Accès au serveur WEB via SSH
+function ssh_web() {
+    command_to_run="$*"  
+    ssh "$web_server_user@$web_server_ip" "$command_to_run"
+}
+
+#Accès au serveur DB via SSH
 function ssh_db() {
     command_to_run="$*"  
     ssh "$db_server_user@$db_server_ip" "$command_to_run"
@@ -71,19 +79,19 @@ function ssh_db() {
 function cp_dezip_webservices(){
 webservices_directory=/home/sunupac/webserservices/"$pays"
 echo  "Transfert du webservice"
-ws_file=$(find "$backup_webservices" -type f -name "$ISO_key"*.tar.gz)
+ws_file=$( ssh_web "find "$backup_webservices" -type f -name "$ISO_key"*.tar.gz")
 if [ $? -eq 0 ]; then
   ws_file=("$backup_webservices"/"$pays"/*.tar.gz)
    if [ $? -eq 0 ]; then
-   cp $ws_file $webservices_directory
+   ssh_web "cp $ws_file $webservices_directory"
     if [ $? -eq 0 ]; then
-      tar -zxvf $webservices_directory/*.tar.gz -C $webservices_directory > /dev/null  
+     ssh_web "tar -zxvf $webservices_directory/*.tar.gz -C $webservices_directory > /dev/null" 
         if [ $? -eq 0 ]; then
-          rm  $webservices_directory/*.tar.gz
+         ssh_web " rm  $webservices_directory/*.tar.gz"
           echo "$(date +'%Y-%m-%d %H:%M:%S')  WEBSERVICE :A JOUR " >> /home/sunupac/script/sunu_apte.log
           echo "Transfert webservices réussi"
         else 
-        rm  $webservices_directory/*.tar.gz
+       ssh_web " rm  $webservices_directory/*.tar.gz "
         echo "$(date +'%Y-%m-%d %H:%M:%S')   WEBSERVICE : ECHEC DECOMPRESSION " >> /home/sunupac/script/sunu_apte.log
         echo "Echec décompression"
         fi

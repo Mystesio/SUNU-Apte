@@ -1,12 +1,17 @@
 package com.sunu.apte.Service;
 
-import java.io.*;
 import org.springframework.stereotype.Service;
+
+import java.io.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 @Service
 public class ApteService {
 
     private String script;
+    private final BlockingQueue<String> promptQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<String> responseQueue = new LinkedBlockingQueue<>();
 
     public void setScript(String script) {
         this.script = script;
@@ -18,40 +23,37 @@ public class ApteService {
         }
 
         // Chemin complet du script pour WSL
-        String scriptDirectory = "/mnt/c/Users/william.amoussou/Documents/SUNU-APTE/apte_back/SHELL";
+        String scriptDirectory = "/mnt/c/Users/william.amoussou/Documents/SUNU-APTE/apte_back/SHELL/";
         
         // Commande pour exécuter le script avec WSL
         String[] command = {"wsl.exe", "-e", "bash", "-c", "cd " + scriptDirectory + " && ./" + script};
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.redirectErrorStream(true); // Combine les flux de sortie et d'erreur
         System.out.println("Executing command: " + String.join(" ", command));
         
         Process process = processBuilder.start();
         System.out.println("Process started: " + process.toString());
 
-        try (BufferedReader scriptReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-             BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-             BufferedWriter scriptWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))) {
 
             StringBuilder output = new StringBuilder();
             String line;
 
-            while ((line = scriptReader.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {
                 System.out.println("Script output: " + line);  // Ajoutez ce journal
                 output.append(line).append("\n");
 
                 if (line.contains("read -p")) {
                     System.out.println("Prompt detected: " + line);
-                    String userInput = inputHandler.getUserInput(line);
-                    System.out.println("User input: " + userInput);
-                    scriptWriter.write(userInput + "\n");
-                    scriptWriter.flush();
-                }
-            }
+                    promptQueue.put(line);  // Ajoute le prompt à la file d'attente
 
-            while ((line = errorReader.readLine()) != null) {
-                System.out.println("Error output: " + line);  // Ajoutez ce journal
-                output.append("ERROR: ").append(line).append("\n");
+                    String userInput = responseQueue.take();  // Attendre la réponse de l'utilisateur
+                    System.out.println("User input: " + userInput);
+                    writer.write(userInput + "\n");
+                    writer.flush();
+                }
             }
 
             int exitCode = process.waitFor();
@@ -68,8 +70,15 @@ public class ApteService {
         }
     }
 
+    public String getPrompt() throws InterruptedException {
+        return promptQueue.take();  // Récupère le prochain prompt
+    }
+
+    public void sendResponse(String response) throws InterruptedException {
+        responseQueue.put(response);  // Envoie la réponse utilisateur
+    }
+
     public interface ScriptInputHandler {
         String getUserInput(String prompt);
     }
 }
-
