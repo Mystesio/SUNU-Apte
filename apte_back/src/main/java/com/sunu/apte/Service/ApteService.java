@@ -34,16 +34,32 @@ public class ApteService {
         
         Process process = processBuilder.start();
         System.out.println("Process started: " + process.toString());
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))) {
+        
+        
+        
+        try {
+        	
+        	BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+            
+            System.out.println("Reader: " + reader);
+            System.out.println("Writer: " + writer);
 
             StringBuilder output = new StringBuilder();
             String line;
-
-            while ((line = reader.readLine()) != null) {
+            
+            reader.readLine();
+            System.out.println(line);
+            
+            
+            while (line != null) {
+            	
+            	 System.out.println(line != null);
+            	 
                 System.out.println("Script output: " + line);  // Ajoutez ce journal
                 output.append(line).append("\n");
+                
+                System.out.println(output);
 
                 if (line.contains("read -p")) {
                     System.out.println("Prompt detected: " + line);
@@ -63,11 +79,12 @@ public class ApteService {
             } else {
                 return "Échec de l'exécution du script\n" + output.toString();
             }
-        } catch (IOException | InterruptedException e) {
-            process.destroy();
+			
+		} catch (IOException | InterruptedException e) {
+			process.destroy();
             System.out.println("Exception occurred: " + e.getMessage());
             throw e;
-        }
+		}
     }
 
     public String getPrompt() throws InterruptedException {
