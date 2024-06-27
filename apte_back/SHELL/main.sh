@@ -32,14 +32,14 @@ web_server_ip="10.12.13.9"
 
 # Informations sur le serveur app
 app_server_user="sunupac"
-app_server_ip="10.12.13.55"
+app_server_ip="10.12.13.58"
 app_server_directory=/home/sunupac/"$pays"/odoo-8.0-20171001/openerp/addons
 
 
 
 # Informations sur le serveur de base de données
 db_server_user="sunupac"
-db_server_ip="10.12.13.45"
+db_server_ip="10.12.13.4"
 db_server_directory="/home/sunupac"
 
 

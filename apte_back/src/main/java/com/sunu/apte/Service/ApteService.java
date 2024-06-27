@@ -34,32 +34,25 @@ public class ApteService {
         
         Process process = processBuilder.start();
         System.out.println("Process started: " + process.toString());
-        
-        
-        
-        try {
-        	
-        	BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-            
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))) {
+
+            // Vérification initiale des valeurs de reader et writer
             System.out.println("Reader: " + reader);
             System.out.println("Writer: " + writer);
 
             StringBuilder output = new StringBuilder();
             String line;
             
-            reader.readLine();
-            System.out.println(line);
-            
-            
-            while (line != null) {
-            	
-            	 System.out.println(line != null);
-            	 
+            while ((line = reader.readLine()) != null) {
+                // Vérification de la lecture de la ligne
+                System.out.println("Line read: " + line);
+
                 System.out.println("Script output: " + line);  // Ajoutez ce journal
                 output.append(line).append("\n");
                 
-                System.out.println(output);
+              
 
                 if (line.contains("read -p")) {
                     System.out.println("Prompt detected: " + line);
@@ -69,6 +62,9 @@ public class ApteService {
                     System.out.println("User input: " + userInput);
                     writer.write(userInput + "\n");
                     writer.flush();
+
+                    // Vérification de l'écriture de la réponse utilisateur
+                    System.out.println("Written to writer: " + userInput);
                 }
             }
 
@@ -79,12 +75,11 @@ public class ApteService {
             } else {
                 return "Échec de l'exécution du script\n" + output.toString();
             }
-			
-		} catch (IOException | InterruptedException e) {
-			process.destroy();
+        } catch (IOException | InterruptedException e) {
+            process.destroy();
             System.out.println("Exception occurred: " + e.getMessage());
             throw e;
-		}
+        }
     }
 
     public String getPrompt() throws InterruptedException {
@@ -96,6 +91,6 @@ public class ApteService {
     }
 
     public interface ScriptInputHandler {
-        String getUserInput(String prompt);
+       String getUserInput(String prompt);
     }
 }
