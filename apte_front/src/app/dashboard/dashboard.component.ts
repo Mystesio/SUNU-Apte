@@ -1,7 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ApteService } from 'app/service/apte.service';
 
-
 interface Country {
   name: string;
   sunulifeState: string;
@@ -76,6 +75,14 @@ export class DashboardComponent implements OnInit {
   }
 
   handlePrompts(): void {
+    this.isPromptPending = true;
+    this.apteService.userInput$.subscribe(prompt => {
+      const result = window.prompt(prompt, '');
+      if (result !== null) {
+        this.sendResponse(result);
+      }
+      this.cdr.detectChanges();
+    });
     this.apteService.getPrompt().subscribe({
       next: prompt => {
         if (prompt) {
@@ -84,10 +91,12 @@ export class DashboardComponent implements OnInit {
             this.sendResponse(result);
           }
         }
+        this.isPromptPending = false;
         this.cdr.detectChanges();
       },
       error: err => {
         console.log('Error getting prompt:', err);
+        this.isPromptPending = false;
         this.cdr.detectChanges();
       }
     });

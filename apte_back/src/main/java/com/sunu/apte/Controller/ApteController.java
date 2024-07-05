@@ -34,7 +34,7 @@ public class ApteController {
         apteService.setScript(request.getScript());
         new Thread(() -> {
             try {
-                apteService.executeScript(prompt -> {
+                String result = apteService.executeScript(prompt -> {
                     try {
                         apteService.sendResponse(prompt);
                         return apteService.getPrompt();
@@ -43,12 +43,14 @@ public class ApteController {
                         return "Erreur: interruption lors de la lecture de l'entrée utilisateur.";
                     }
                 });
+                // You can log the result or handle it here if necessary
+                System.out.println(result);
             } catch (IOException | InterruptedException e) {
                 // Log exception
+                e.printStackTrace();
             }
         }).start();
         return "Script en cours d'exécution";
     }
 }
-
 

@@ -1,5 +1,6 @@
 package com.sunu.apte.Service;
 
+import com.jcraft.jsch.*;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -22,75 +23,125 @@ public class ApteService {
             return "Le chemin du script n'a pas été spécifié.";
         }
 
-        // Chemin complet du script pour WSL
-        String scriptDirectory = "/mnt/c/Users/william.amoussou/Documents/SUNU-APTE/apte_back/SHELL/";
-        
-        // Commande pour exécuter le script avec WSL
-        String[] command = {"wsl.exe", "-e", "bash", "-c", "cd " + scriptDirectory + " && ./" + script};
+        String username = "sunupac";
+        String host = "10.12.13.9";
+        int port = 22;
+        String password = "sunupac";
 
-        ProcessBuilder processBuilder = new ProcessBuilder(command);
-        processBuilder.redirectErrorStream(true); // Combine les flux de sortie et d'erreur
-        System.out.println("Executing command: " + String.join(" ", command));
-        
-        Process process = processBuilder.start();
-        System.out.println("Process started: " + process.toString());
+        JSch jsch = new JSch();
+        Session session = null;
+        ChannelExec channel = null;
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()))) {
+        StringBuilder output = new StringBuilder();
+        int promptCount = 0; // Compteur pour les lignes qui commencent par read -r ou read -p
 
-            // Vérification initiale des valeurs de reader et writer
-            System.out.println("Reader: " + reader);
-            System.out.println("Writer: " + writer);
+        try {
+            // Supprimer la clé d'hôte existante
+            Process process = Runtime.getRuntime().exec("ssh-keygen -R " + host);
+            process.waitFor();
 
-            StringBuilder output = new StringBuilder();
-            String line;
-            
-            while ((line = reader.readLine()) != null) {
-                // Vérification de la lecture de la ligne
-                System.out.println("Line read: " + line);
+            output.append("Clé d'hôte supprimée pour ").append(host).append("\n");
 
-                System.out.println("Script output: " + line);  // Ajoutez ce journal
-                output.append(line).append("\n");
-                
-              
+            session = jsch.getSession(username, host, port);
+            session.setPassword(password);
 
-                if (line.contains("read -p")) {
-                    System.out.println("Prompt detected: " + line);
-                    promptQueue.put(line);  // Ajoute le prompt à la file d'attente
+            // Ajouter ce bloc pour désactiver la vérification de la clé d'hôte
+            java.util.Properties config = new java.util.Properties();
+            config.put("StrictHostKeyChecking", "no");
+            session.setConfig(config);
 
-                    String userInput = responseQueue.take();  // Attendre la réponse de l'utilisateur
-                    System.out.println("User input: " + userInput);
-                    writer.write(userInput + "\n");
-                    writer.flush();
+            session.connect();
 
-                    // Vérification de l'écriture de la réponse utilisateur
-                    System.out.println("Written to writer: " + userInput);
-                }
+            if (session.isConnected()) {
+                output.append("Connexion SSH établie avec ").append(host).append("\n");
+            } else {
+                return "Échec de l'établissement de la connexion SSH avec " + host + "\n";
             }
 
-            int exitCode = process.waitFor();
-            System.out.println("Process exit code: " + exitCode);
+            // Exécuter les commandes supplémentaires via le shell
+            channel = (ChannelExec) session.openChannel("exec");
+            String sshCommand = "echo " + password + " | sudo -S su -c 'cd script && ./" + script + "'";
+            channel.setCommand(sshCommand);
+            channel.setErrStream(System.err);
+
+            InputStream in = channel.getInputStream();
+            OutputStream out = channel.getOutputStream();
+
+            channel.connect();
+
+            if (channel.isConnected()) {
+                output.append("Canal SSH connecté et commande exécutée: ").append(sshCommand).append("\n");
+            } else {
+                return "Échec de l'établissement du canal SSH pour la commande " + sshCommand + "\n";
+            }
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+
+            writer.write(password + "\n");
+            writer.flush();
+
+            String line;
+            StringBuilder errorOutput = new StringBuilder();
+
+            output.append("Début de la lecture des lignes du script\n");
+            while ((line = reader.readLine()) != null) {
+                output.append("Ligne lue: ").append(line).append("\n");
+
+                // Vérification des motifs généraux de l'invite
+                if (line.trim().startsWith("read -p") || line.trim().startsWith("read -r")) {
+                    output.append("Prompt trouvé dans la ligne: ").append(line).append("\n");
+                    promptQueue.put(line);
+                    String userInput = responseQueue.take();
+                    writer.write(userInput + "\n");
+                    writer.flush();
+                    promptCount++; // Incrémenter le compteur pour chaque ligne de prompt trouvée
+                }
+            }
+            output.append("Fin de la lecture des lignes du script\n");
+            output.append("Nombre total de prompts détectés: ").append(promptCount).append("\n");
+
+            BufferedReader errReader = new BufferedReader(new InputStreamReader(channel.getErrStream()));
+            while ((line = errReader.readLine()) != null) {
+                errorOutput.append("Erreur: ").append(line).append("\n");
+            }
+
+            int exitCode = channel.getExitStatus();
             if (exitCode == 0) {
                 return "Script exécuté avec succès\n" + output.toString();
             } else {
-                return "Échec de l'exécution du script\n" + output.toString();
+                return "Échec de l'exécution du script\n" + output.toString() + "\nErreur: " + errorOutput.toString();
             }
-        } catch (IOException | InterruptedException e) {
-            process.destroy();
-            System.out.println("Exception occurred: " + e.getMessage());
-            throw e;
+        } catch (JSchException e) {
+            output.append("Erreur de connexion SSH : ").append(e.getMessage()).append("\n");
+        } catch (IOException e) {
+            output.append("Erreur d'IO : ").append(e.getMessage()).append("\n");
+        } catch (InterruptedException e) {
+            output.append("Erreur d'interruption : ").append(e.getMessage()).append("\n");
+            Thread.currentThread().interrupt(); // Réinterrompt le thread courant
+        } finally {
+            if (channel != null && channel.isConnected()) {
+                channel.disconnect();
+                output.append("Canal SSH déconnecté\n");
+            }
+            if (session != null && session.isConnected()) {
+                session.disconnect();
+                output.append("Session SSH déconnectée\n");
+            }
         }
+        return output.toString();
     }
 
     public String getPrompt() throws InterruptedException {
-        return promptQueue.take();  // Récupère le prochain prompt
+        return promptQueue.take();
     }
 
     public void sendResponse(String response) throws InterruptedException {
-        responseQueue.put(response);  // Envoie la réponse utilisateur
+        responseQueue.put(response);
     }
 
     public interface ScriptInputHandler {
-       String getUserInput(String prompt);
+        String getUserInput(String prompt);
     }
 }
+

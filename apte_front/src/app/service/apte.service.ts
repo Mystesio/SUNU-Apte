@@ -63,8 +63,7 @@ export class ApteService {
   }
 
   sendResponse(response: string): Observable<string> {
-    const params = new HttpParams().set('response', response);
-    return this.http.post<string>(`${this.apiUrl}/script`, {}, { params })
+    return this.http.post<string>(`${this.apiUrl}/script`, { response })
       .pipe(
         catchError(this.handleError.bind(this)),
         switchMap(() => {
