@@ -1,7 +1,7 @@
-import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, Subject, throwError } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -11,8 +11,6 @@ export class ApteService {
   private apiUrl = 'http://localhost:8086/shell';
 
   private errors: string[] = [];
-  private userInputSubject = new Subject<string>();
-  userInput$ = this.userInputSubject.asObservable();
 
   constructor(private http: HttpClient) { }
 
@@ -20,55 +18,33 @@ export class ApteService {
     return this.errors.slice(0, 10); // Retourne les 10 derniers messages d'erreur
   }
 
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    const errorMessage = error.error instanceof ErrorEvent ?
-      `An error occurred: ${error.error.message}` :
-      `Backend returned code ${error.status}, body was: ${error.error}`;
+  private handleError(error: any): Observable<never> {
+    let errorMessage = 'Une erreur inconnue est survenue !';
 
+    if (typeof error.error === 'string') {
+      errorMessage = error.error;
+    }
+
+    // Ajouter l'erreur au tableau d'erreurs
     this.errors.unshift(errorMessage); // Ajoute l'erreur au début du tableau
+    if (this.errors.length > 10) {
+      this.errors.pop(); // Garde seulement les 10 dernières erreurs
+    }
+
     return throwError(errorMessage);
   }
 
-  executeScript(script: string): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/script`, { script })
-      .pipe(
-        catchError(this.handleError.bind(this)),
-        switchMap(response => {
-          return this.pollForPrompt();
-        })
-      );
-  }
+  executeScript(script: string, pays: string): Observable<string> {
+    const params = new HttpParams()
+      .set('script', script)
+      .set('pays', pays);
 
-  pollForPrompt(): Observable<string> {
-    return new Observable<string>(observer => {
-      const intervalId = setInterval(() => {
-        this.getPrompt().subscribe(
-          prompt => {
-            if (prompt) {
-              observer.next(prompt);
-              clearInterval(intervalId);
-            }
-          },
-          error => observer.error(error)
-        );
-      }, 1000); // Interroge le backend toutes les secondes
-
-      return () => clearInterval(intervalId);
-    });
-  }
-
-  getPrompt(): Observable<string> {
-    return this.http.get<string>(`${this.apiUrl}/prompt`)
+    return this.http.post(`${this.apiUrl}/execute`, null, { params, responseType: 'text' })
       .pipe(catchError(this.handleError.bind(this)));
   }
 
-  sendResponse(response: string): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/script`, { response })
-      .pipe(
-        catchError(this.handleError.bind(this)),
-        switchMap(() => {
-          return this.pollForPrompt();
-        })
-      );
+  getListePays(): Observable<string> {
+    return this.http.get(`${this.apiUrl}/liste-pays`, { responseType: 'text' })
+      .pipe(catchError(this.handleError.bind(this)));
   }
 }

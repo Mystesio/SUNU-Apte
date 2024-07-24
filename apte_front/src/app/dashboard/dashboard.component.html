@@ -32,18 +32,16 @@
                     </button>
                     <div *ngIf="country.menuVisible" class="menu-burger">
                       <div class="button-row">
-                        <h2>Sunupac</h2> <!-- Changed to h2 and applied a smaller size in CSS -->
+                        <h2>Sunupac</h2>
                         <button class="btn btn-custom btn-small" (click)="onLaunch(country.name)">Démarrer un environnement</button>
                         <button class="btn btn-custom btn-small" (click)="onPreprod(country.name)">Envoi en Preproduction</button>
                       </div>
                       <div class="button-row">
                         <button class="btn btn-custom btn-small" (click)="onMajAddonsSunupac(country.name)">MAJ SUNUPAC addons</button>
-                        <button class="btn btn-custom btn-small" (click)="onMajPortSunupac(country.name)">MAJ SUNUPAC port</button>
                         <button class="btn btn-custom btn-small" (click)="onMajDbSunupac(country.name)">MAJ SUNUPAC Base de données</button>
                       </div>
                       <div class="button-row">
-                        <h2>Sunulife</h2> <!-- Changed to h2 and applied a smaller size in CSS -->
-                        <button class="btn btn-custom btn-small" (click)="onMajDbSunulife(country.name)">Démarrer SUNULIFE</button>
+                        <h2>Sunulife</h2>
                         <button class="btn btn-custom btn-small" (click)="onMajDbSunulife(country.name)">MAJ Base de données</button>
                       </div>
                     </div>
@@ -80,6 +78,12 @@
                       <div class="ripple-container"></div>
                     </a>
                   </li>
+                  <li class="nav-item">
+                    <a mat-button class="nav-link" href="#script-output" data-toggle="tab">
+                      <i class="material-icons">info</i> Script Output
+                      <div class="ripple-container"></div>
+                    </a>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -113,6 +117,9 @@
                   </tbody>
                 </table>
               </div>
+              <div class="tab-pane" id="script-output">
+                <p>{{ scriptOutput }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -120,4 +127,3 @@
     </div>
   </div>
 </div>
-

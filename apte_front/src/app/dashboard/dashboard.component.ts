@@ -19,27 +19,55 @@ export class DashboardComponent implements OnInit {
   activities: string[] = [];
   sauvegardes: string[] = [];
   scriptOutput: string = '';
-  isPromptPending: boolean = false;
   countries: Country[] = [
-    { name: 'Benin', sunulifeState: 'Actif', sunupacState: 'Actif', menuVisible: false },
-    { name: 'Burkina', sunulifeState: 'Actif', sunupacState: 'Actif', menuVisible: false },
-    { name: 'Congo', sunulifeState: 'Actif', sunupacState: 'Actif', menuVisible: false },
-    { name: 'Mali', sunulifeState: 'Actif', sunupacState: 'Actif', menuVisible: false },
-    { name: 'Mauritanie', sunulifeState: 'Actif', sunupacState: 'Actif', menuVisible: false },
-    { name: 'Niger', sunulifeState: 'Actif', sunupacState: 'Actif', menuVisible: false },
-    { name: 'RDC', sunulifeState: 'Actif', sunupacState: 'Actif', menuVisible: false },
-    { name: 'Sénégal', sunulifeState: 'Actif', sunupacState: 'Actif', menuVisible: false },
-    { name: 'Togo', sunulifeState: 'Actif', sunupacState: 'Actif', menuVisible: false }
+    { name: 'Bénin', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
+    { name: 'Burkina', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
+    { name: 'Congo', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
+    { name: 'Mali', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
+    { name: 'Mauritanie', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
+    { name: 'Niger', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
+    { name: 'RDC', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
+    { name: 'Sénégal', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
+    { name: 'Togo', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false }
   ];
 
   constructor(private apteService: ApteService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     this.updateErrors();
+    this.updateCountryStates();
   }
 
   updateErrors(): void {
     this.errors = this.apteService.getErrors();
+  }
+
+  updateCountryStates(): void {
+    this.apteService.getListePays().subscribe({
+      next: response => {
+        const lines = response.split('\n');
+        const activeLine = lines.find(line => line.startsWith("Liste des instances SUNUPAC déployés:"));
+        if (activeLine) {
+          const activeCountries = activeLine.replace("Liste des instances SUNUPAC déployés:", "").trim().split(' ');
+          this.countries.forEach(country => {
+            if (activeCountries.includes(country.name.toUpperCase())) {
+              country.sunupacState = 'Actif';
+            } else {
+              country.sunupacState = 'Inactif';
+            }
+          });
+        } else {
+          this.countries.forEach(country => {
+            country.sunupacState = 'Inactif';
+          });
+        }
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        this.errors.push(err);
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   addActivity(action: string): void {
@@ -56,60 +84,18 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  executeScript(script: string): void {
-    console.log(`Executing script: ${script}`);
-    this.apteService.executeScript(script).subscribe({
+  executeScript(script: string, pays: string): void {
+    console.log(`Executing script: ${script} for country: ${pays}`);
+    this.apteService.executeScript(script, pays).subscribe({
       next: response => {
-        console.log(`Script executed successfully: ${script}`);
+        console.log(`Script executed successfully: ${script} for country: ${pays}`);
         this.scriptOutput = response;
-        this.handlePrompts();
       },
       error: err => {
-        console.log(`Error executing script: ${script}`);
-        this.scriptOutput = 'Error: ' + err;
+        console.log(`Error executing script: ${script} for country: ${pays}`);
+        this.scriptOutput = err;
         console.log(err);
         this.updateErrors();
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  handlePrompts(): void {
-    this.isPromptPending = true;
-    this.apteService.userInput$.subscribe(prompt => {
-      const result = window.prompt(prompt, '');
-      if (result !== null) {
-        this.sendResponse(result);
-      }
-      this.cdr.detectChanges();
-    });
-    this.apteService.getPrompt().subscribe({
-      next: prompt => {
-        if (prompt) {
-          const result = window.prompt(prompt, '');
-          if (result !== null) {
-            this.sendResponse(result);
-          }
-        }
-        this.isPromptPending = false;
-        this.cdr.detectChanges();
-      },
-      error: err => {
-        console.log('Error getting prompt:', err);
-        this.isPromptPending = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  sendResponse(response: string): void {
-    this.apteService.sendResponse(response).subscribe({
-      next: () => {
-        this.handlePrompts();
-        this.cdr.detectChanges();
-      },
-      error: err => {
-        console.log('Error sending response:', err);
         this.cdr.detectChanges();
       }
     });
@@ -123,42 +109,36 @@ export class DashboardComponent implements OnInit {
   onLaunch(countryName: string): void {
     console.log(`Sauvegarde de SUNUPAC ${countryName}`);
     this.addSauvegarde(`Sauvegarde de SUNUPAC ${countryName}`);
-    this.executeScript('launch.sh');
+    this.executeScript('launch.sh', countryName);
   }
 
   onLaunchAll(): void {
     console.log(`Sauvegarde des environnements Sunupac`);
     this.addSauvegarde(`Sauvegarde des environnements SUNUPAC`);
-    this.executeScript('launch-all.sh');
+    this.countries.forEach(country => this.executeScript('launch-all.sh', country.name));
   }
 
   onMajAddonsSunupac(countryName: string): void {
     console.log(`Mise à jour des addons de Sunupac pour ${countryName}...`);
     this.addActivity(`Mise à jour des addons de SUNUPAC ${countryName}`);
-    this.executeScript('maj_addons_sunupac.sh');
+    this.executeScript('maj_addons_sunupac.sh', countryName);
   }
 
   onMajDbSunupac(countryName: string): void {
     console.log(`Mise à jour de la base de données Sunupac pour ${countryName}...`);
     this.addActivity(`Mise à jour de la base de données de SUNUPAC ${countryName}`);
-    this.executeScript('maj_db_sunupac.sh');
-  }
-
-  onMajPortSunupac(countryName: string): void {
-    console.log(`Mise à jour du port Sunupac pour ${countryName}...`);
-    this.addActivity(`Mise à jour du port de SUNUPAC ${countryName}`);
-    this.executeScript('maj_port_sunupac.sh');
+    this.executeScript('maj_db_sunupac.sh', countryName);
   }
 
   onMajDbSunulife(countryName: string): void {
     console.log(`Mise à jour de la base de données Sunulife pour ${countryName}...`);
     this.addActivity(`Mise à jour de la base de données de SUNULIFE ${countryName}`);
-    this.executeScript('maj_db_sunulife.sh');
+    this.executeScript('maj_db_sunulife.sh', countryName);
   }
 
   onPreprod(countryName: string): void {
     console.log(`Envoi en pré-production pour ${countryName}...`);
     this.addActivity(`Envoi en pré-production pour ${countryName}`);
-    this.executeScript('preprod.sh');
+    this.executeScript('preprod.sh', countryName);
   }
 }
