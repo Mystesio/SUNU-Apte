@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -9,42 +9,44 @@ import { catchError } from 'rxjs/operators';
 export class ApteService {
 
   private apiUrl = 'http://localhost:8086/shell';
-
-  private errors: string[] = [];
+  private bugs: string[] = [];
 
   constructor(private http: HttpClient) { }
 
-  getErrors(): string[] {
-    return this.errors.slice(0, 10); // Retourne les 10 derniers messages d'erreur
+  getBugs(): string[] {
+    return this.bugs.slice(0, 10); // Retourne les 10 derniers messages d'erreur
   }
 
-  private handleError(error: any): Observable<never> {
-    let errorMessage = 'Une erreur inconnue est survenue !';
-
-    if (typeof error.error === 'string') {
-      errorMessage = error.error;
+  private handleResponse(response: string): string {
+    console.log('handleResponse - response:', response);
+    this.bugs.unshift(response); // Ajoute le message au début du tableau
+    console.log('handleResponse - bugs after unshift:', this.bugs);
+    if (this.bugs.length > 10) {
+      this.bugs.pop(); // Garde seulement les 10 dernières messages
     }
-
-    // Ajouter l'erreur au tableau d'erreurs
-    this.errors.unshift(errorMessage); // Ajoute l'erreur au début du tableau
-    if (this.errors.length > 10) {
-      this.errors.pop(); // Garde seulement les 10 dernières erreurs
-    }
-
-    return throwError(errorMessage);
+    console.log('handleResponse - bugs after pop:', this.bugs);
+    return response; // Retourne la réponse complète
   }
-
+  
   executeScript(script: string, pays: string): Observable<string> {
     const params = new HttpParams()
       .set('script', script)
       .set('pays', pays);
 
     return this.http.post(`${this.apiUrl}/execute`, null, { params, responseType: 'text' })
-      .pipe(catchError(this.handleError.bind(this)));
+      .pipe(
+        map(response => this.handleResponse(response))
+      );
   }
 
   getListePays(): Observable<string> {
+    console.log('getListePays - fetching data...');
     return this.http.get(`${this.apiUrl}/liste-pays`, { responseType: 'text' })
-      .pipe(catchError(this.handleError.bind(this)));
+      .pipe(
+        map(response => {
+          console.log('getListePays - response:', response);
+          return this.handleResponse(response);
+        })
+      );
   }
 }

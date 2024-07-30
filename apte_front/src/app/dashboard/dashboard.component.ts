@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { ApteService } from 'app/service/apte.service';
+import { ApteService } from 'app/service/apte.service'; // Assurez-vous que le chemin est correct
 
 interface Country {
   name: string;
@@ -15,36 +15,42 @@ interface Country {
 })
 export class DashboardComponent implements OnInit {
 
-  errors: string[] = [];
+  bugs: string[] = [];
   activities: string[] = [];
   sauvegardes: string[] = [];
   scriptOutput: string = '';
   countries: Country[] = [
-    { name: 'Bénin', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
+    { name: 'Benin', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
     { name: 'Burkina', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
     { name: 'Congo', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
     { name: 'Mali', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
     { name: 'Mauritanie', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
     { name: 'Niger', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
     { name: 'RDC', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
-    { name: 'Sénégal', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
+    { name: 'Senegal', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
     { name: 'Togo', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false }
   ];
 
   constructor(private apteService: ApteService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
-    this.updateErrors();
+    console.log('ngOnInit - initializing component');
+    this.updateBugs();
     this.updateCountryStates();
   }
 
-  updateErrors(): void {
-    this.errors = this.apteService.getErrors();
+  updateBugs(): void {
+    console.log('updateBugs - updating bugs');
+    this.bugs = this.apteService.getBugs();
+    console.log('updateBugs - bugs:', this.bugs);
+    this.cdr.detectChanges();
   }
 
   updateCountryStates(): void {
+    console.log('updateCountryStates - fetching data');
     this.apteService.getListePays().subscribe({
       next: response => {
+        console.log('updateCountryStates - response:', response);
         const lines = response.split('\n');
         const activeLine = lines.find(line => line.startsWith("Liste des instances SUNUPAC déployés:"));
         if (activeLine) {
@@ -61,20 +67,24 @@ export class DashboardComponent implements OnInit {
             country.sunupacState = 'Inactif';
           });
         }
+        console.log('updateCountryStates - countries:', this.countries);
         this.cdr.detectChanges();
       },
       error: err => {
-        this.errors.push(err);
-        this.cdr.detectChanges();
+        console.log('updateCountryStates - error:', err);
+        this.bugs.push(err);
+        this.updateBugs();
       }
     });
   }
-
+  
   addActivity(action: string): void {
     this.activities.unshift(action);
     if (this.activities.length > 10) {
       this.activities.pop();
     }
+    console.log('addActivity - activities:', this.activities);
+    this.cdr.detectChanges();
   }
 
   addSauvegarde(sauvegarde: string): void {
@@ -82,6 +92,8 @@ export class DashboardComponent implements OnInit {
     if (this.sauvegardes.length > 10) {
       this.sauvegardes.pop();
     }
+    console.log('addSauvegarde - sauvegardes:', this.sauvegardes);
+    this.cdr.detectChanges();
   }
 
   executeScript(script: string, pays: string): void {
@@ -90,19 +102,21 @@ export class DashboardComponent implements OnInit {
       next: response => {
         console.log(`Script executed successfully: ${script} for country: ${pays}`);
         this.scriptOutput = response;
+        this.updateBugs();
+        console.log('executeScript - scriptOutput:', this.scriptOutput);
       },
       error: err => {
         console.log(`Error executing script: ${script} for country: ${pays}`);
         this.scriptOutput = err;
-        console.log(err);
-        this.updateErrors();
-        this.cdr.detectChanges();
+        this.updateBugs();
+        console.log('executeScript - error:', err);
       }
     });
   }
 
   toggleMenu(country: Country): void {
     country.menuVisible = !country.menuVisible;
+    console.log('toggleMenu - country:', country);
     this.cdr.detectChanges();
   }
 
@@ -115,7 +129,7 @@ export class DashboardComponent implements OnInit {
   onLaunchAll(): void {
     console.log(`Sauvegarde des environnements Sunupac`);
     this.addSauvegarde(`Sauvegarde des environnements SUNUPAC`);
-    this.countries.forEach(country => this.executeScript('launch-all.sh', country.name));
+    this.countries.forEach(country => this.executeScript('launch-all.sh', 'pays'));
   }
 
   onMajAddonsSunupac(countryName: string): void {

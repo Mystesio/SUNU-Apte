@@ -12,6 +12,7 @@
             </div>
           </div>
           <div class="card-body">
+            <button class="btn btn-custom btn-small" (click)="onLaunchAll()">Sauvegarde Totale</button>
             <table class="table">
               <thead>
                 <tr>
@@ -78,12 +79,6 @@
                       <div class="ripple-container"></div>
                     </a>
                   </li>
-                  <li class="nav-item">
-                    <a mat-button class="nav-link" href="#script-output" data-toggle="tab">
-                      <i class="material-icons">info</i> Script Output
-                      <div class="ripple-container"></div>
-                    </a>
-                  </li>
                 </ul>
               </div>
             </div>
@@ -93,8 +88,8 @@
               <div class="tab-pane active" id="profile">
                 <table class="table">
                   <tbody>
-                    <tr *ngFor="let error of errors">
-                      <td>{{ error }}</td>
+                    <tr *ngFor="let bug of bugs">
+                      <td> {{bug}} </td>
                     </tr>
                   </tbody>
                 </table>
@@ -116,9 +111,6 @@
                     </tr>
                   </tbody>
                 </table>
-              </div>
-              <div class="tab-pane" id="script-output">
-                <p>{{ scriptOutput }}</p>
               </div>
             </div>
           </div>

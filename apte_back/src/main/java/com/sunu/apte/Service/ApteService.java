@@ -66,10 +66,12 @@ public class ApteService {
             String line;
             StringBuilder errorOutput = new StringBuilder();
 
+            // Lire le flux de sortie jusqu'à la fin de l'exécution du script
             while ((line = reader.readLine()) != null) {
                 output.append(line).append("\n");
             }
 
+            // Lire le flux d'erreur jusqu'à la fin de l'exécution du script
             BufferedReader errReader = new BufferedReader(new InputStreamReader(channel.getErrStream()));
             while ((line = errReader.readLine()) != null) {
                 errorOutput.append(line).append("\n");
@@ -77,10 +79,13 @@ public class ApteService {
 
             int exitCode = channel.getExitStatus();
             if (exitCode == 0) {
-                return output.toString(); // Retourne le message de sortie du script
+                output.append("Script exécuté avec succès\n");
             } else {
-                return "Échec de l'exécution du script\n" + output.toString() + "\nErreur: " + errorOutput.toString();
+                output.append("Échec de l'exécution du script\n");
+                output.append("Erreur: ").append(errorOutput.toString()).append("\n");
             }
+
+            return output.toString(); // Retourne le message de sortie du script
         } catch (JSchException e) {
             output.append("Erreur de connexion SSH : ").append(e.getMessage()).append("\n");
         } catch (IOException e) {
@@ -99,8 +104,8 @@ public class ApteService {
             }
         }
         return output.toString(); // Retourne le message de sortie du script
+
     }
-    
     public String listePays() throws IOException, InterruptedException {
         String script = "liste_pays.sh";
         String pays = "pays";  // Non utilisé pour ce script
