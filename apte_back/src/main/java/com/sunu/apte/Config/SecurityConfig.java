@@ -43,7 +43,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
             .cors(withDefaults())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/users/authenticate", "/shell/execute", "/shell/**", "/users/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml", "/swagger-ui/index.html").permitAll()
+                .requestMatchers("/", "/users/authenticate", "/shell/execute", "/shell/**", "/users/**","/pays/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml", "/swagger-ui/index.html").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

@@ -13,7 +13,7 @@
           </div>
           <div class="card-body">
             <button class="btn btn-custom btn-small" (click)="onLaunchAll()">Sauvegarde Totale</button>
-            <table class="table">
+            <table class="table" *ngIf="paysList && paysList.length > 0">
               <thead>
                 <tr>
                   <th>Nom du pays</th>
@@ -23,47 +23,48 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let country of countries">
-                  <td>{{ country.name }}</td>
-                  <td>{{ country.sunulifeState }}</td>
-                  <td>{{ country.sunupacState }}</td>
+                <tr *ngFor="let pays of paysList; trackBy: trackByPaysName">
+                  <td>{{ pays.name }}</td>
+                  <td>{{ pays.sunulifeState ? 'Actif' : 'Inactif' }}</td>
+                  <td>{{ pays.sunupacState ? 'Actif' : 'Inactif' }}</td>
                   <td>
-                    <button class="btn btn-custom" (click)="toggleMenu(country)">
+                    <button class="btn btn-custom" (click)="toggleMenu(pays)">
                       <i class="material-icons">arrow_drop_down</i>
                     </button>
-                    <div *ngIf="country.menuVisible" class="menu-burger">
+                    <div *ngIf="pays.menuVisible" class="menu-burger">
                       <div class="button-row">
                         <h2>Sunupac</h2>
-                        <button class="btn btn-custom btn-small" (click)="onLaunch(country.name)">Démarrer un environnement</button>
-                        <button class="btn btn-custom btn-small" (click)="onPreprod(country.name)">Envoi en Preproduction</button>
+                        <button class="btn btn-custom btn-small" (click)="onLaunch(pays.name)">Démarrer un environnement</button>
+                        <button class="btn btn-custom btn-small" (click)="onPreprod(pays.name)">Envoi en Preproduction</button>
                       </div>
                       <div class="button-row">
-                        <button class="btn btn-custom btn-small" (click)="onMajAddonsSunupac(country.name)">MAJ SUNUPAC addons</button>
-                        <button class="btn btn-custom btn-small" (click)="onMajDbSunupac(country.name)">MAJ SUNUPAC Base de données</button>
+                        <button class="btn btn-custom btn-small" (click)="onMajAddonsSunupac(pays.name)">MAJ SUNUPAC addons</button>
+                        <button class="btn btn-custom btn-small" (click)="onMajDbSunupac(pays.name)">MAJ SUNUPAC Base de données</button>
                       </div>
                       <div class="button-row">
                         <h2>Sunulife</h2>
-                        <button class="btn btn-custom btn-small" (click)="onMajDbSunulife(country.name)">MAJ Base de données</button>
+                        <button class="btn btn-custom btn-small" (click)="onMajDbSunulife(pays.name)">MAJ Base de données</button>
                       </div>
                     </div>
                   </td>
                 </tr>
               </tbody>
             </table>
+            <p *ngIf="!paysList || paysList.length === 0">Aucun pays disponible.</p>
           </div>
         </div>
       </div>
     </div>
     <div class="row row-center">
-      <div class="col-lg-6 col-md-12">
-        <div class="card">
+      <div class="col-lg-6 col-md-12 ">
+        <div class="card centered-card">
           <div class="card-header card-header-tabs">
             <div class="nav-tabs-navigation">
               <div class="nav-tabs-wrapper">
                 <ul class="nav nav-tabs" data-tabs="tabs">
                   <li class="nav-item">
                     <a mat-button class="nav-link active" href="#profile" data-toggle="tab">
-                      <i class="material-icons">bug_report</i> Bugs
+                      <i class="material-icons">bug_report</i> Report
                       <div class="ripple-container"></div>
                     </a>
                   </li>
@@ -88,8 +89,8 @@
               <div class="tab-pane active" id="profile">
                 <table class="table">
                   <tbody>
-                    <tr *ngFor="let bug of bugs">
-                      <td> {{bug}} </td>
+                    <tr *ngFor="let report of reportScript">
+                      <td> {{ report }} </td>
                     </tr>
                   </tbody>
                 </table>

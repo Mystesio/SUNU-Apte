@@ -30,12 +30,28 @@
     flex-grow: 1;
 }
 
-.card-header-tabs .nav-tabs-wrapper {
-    background-color: #ba0c2f;
+.card-header-tabs {
+    text-align: center; /* Centre le contenu */
 }
 
+.card-header-tabs .nav-tabs-wrapper,
 .card-header-tabs .nav-tabs-navigation {
     background-color: #ba0c2f;
+    width: 100%; /* Assure que ces éléments prennent toute la largeur */
+    display: flex;
+    justify-content: center; /* Centre le contenu à l'intérieur */
+    padding: 10px 0; /* Ajoute un peu de padding pour plus d'espacement */
+}
+
+.card-header-tabs .nav-tabs {
+    display: inline-flex; /* Centre les onglets à l'intérieur */
+    justify-content: center; /* Assure que les onglets sont centrés */
+    width: 100%; /* Assure que les onglets prennent toute la largeur */
+}
+
+.card-header-tabs .nav-item {
+    flex-grow: 1; /* Chaque onglet prend un espace égal */
+    text-align: center; /* Centre le texte à l'intérieur de chaque onglet */
 }
 
 .card {
@@ -99,14 +115,18 @@
 
 .menu-burger {
     margin-top: 10px; /* Adjust the margin as needed */
-  }
-  
-  .menu-burger h2 {
+}
+
+.menu-burger h2 {
     font-size: 1.2em; /* Reduce the size of the titles */
-  }
-  
-  .btn-small {
+}
+
+.btn-small {
     font-size: 0.8em; /* Reduce the size of the buttons */
     padding: 5px 10px; /* Adjust padding to make the buttons smaller */
-  }
-  
+}
+
+.centered-card {
+    margin: 0 auto;
+    float: none;
+}

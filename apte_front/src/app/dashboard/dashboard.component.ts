@@ -1,12 +1,8 @@
+import { HttpResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { ApteService } from 'app/service/apte.service'; // Assurez-vous que le chemin est correct
-
-interface Country {
-  name: string;
-  sunulifeState: string;
-  sunupacState: string;
-  menuVisible: boolean;
-}
+import { Pays } from 'app/model/pays.model';
+import { ApteService } from 'app/service/apte.service';
+import { PaysService } from 'app/service/pays.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -15,69 +11,43 @@ interface Country {
 })
 export class DashboardComponent implements OnInit {
 
-  bugs: string[] = [];
   activities: string[] = [];
   sauvegardes: string[] = [];
-  scriptOutput: string = '';
-  countries: Country[] = [
-    { name: 'Benin', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
-    { name: 'Burkina', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
-    { name: 'Congo', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
-    { name: 'Mali', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
-    { name: 'Mauritanie', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
-    { name: 'Niger', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
-    { name: 'RDC', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
-    { name: 'Senegal', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false },
-    { name: 'Togo', sunulifeState: 'Inactif', sunupacState: 'Inactif', menuVisible: false }
-  ];
+  paysList: Pays[] = []; // Tableau pour stocker la liste des pays
+  reportScript: string[] = []; // Tableau pour stocker les 10 dernières réponses
 
-  constructor(private apteService: ApteService, private cdr: ChangeDetectorRef) { }
+
+  constructor(private apteService: ApteService, private paysService: PaysService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     console.log('ngOnInit - initializing component');
-    this.updateBugs();
-    this.updateCountryStates();
+    this.loadPaysList(); // Charger la liste des pays au démarrage
+
   }
 
-  updateBugs(): void {
-    console.log('updateBugs - updating bugs');
-    this.bugs = this.apteService.getBugs();
-    console.log('updateBugs - bugs:', this.bugs);
-    this.cdr.detectChanges();
+ // Méthode pour charger la liste des pays
+loadPaysList(): void {
+  this.paysService.getListePays().subscribe({
+    next: pays => {
+      this.paysList = pays.map(p => ({ ...p, menuVisible: false }));
+      console.log('Pays list loaded:', this.paysList);
+      this.cdr.detectChanges(); // Détecter les changements
+ 
+    },
+    error: err => {
+      console.log('Error loading pays list:', err);
+    }
+  });
+}
+
+
+  toggleMenu(pays: Pays): void {
+    pays.menuVisible = !pays.menuVisible;
+    this.cdr.detectChanges(); // Détecter les changements
   }
 
-  updateCountryStates(): void {
-    console.log('updateCountryStates - fetching data');
-    this.apteService.getListePays().subscribe({
-      next: response => {
-        console.log('updateCountryStates - response:', response);
-        const lines = response.split('\n');
-        const activeLine = lines.find(line => line.startsWith("Liste des instances SUNUPAC déployés:"));
-        if (activeLine) {
-          const activeCountries = activeLine.replace("Liste des instances SUNUPAC déployés:", "").trim().split(' ');
-          this.countries.forEach(country => {
-            if (activeCountries.includes(country.name.toUpperCase())) {
-              country.sunupacState = 'Actif';
-            } else {
-              country.sunupacState = 'Inactif';
-            }
-          });
-        } else {
-          this.countries.forEach(country => {
-            country.sunupacState = 'Inactif';
-          });
-        }
-        console.log('updateCountryStates - countries:', this.countries);
-        this.cdr.detectChanges();
-      },
-      error: err => {
-        console.log('updateCountryStates - error:', err);
-        this.bugs.push(err);
-        this.updateBugs();
-      }
-    });
-  }
-  
+
+
   addActivity(action: string): void {
     this.activities.unshift(action);
     if (this.activities.length > 10) {
@@ -98,61 +68,93 @@ export class DashboardComponent implements OnInit {
 
   executeScript(script: string, pays: string): void {
     console.log(`Executing script: ${script} for country: ${pays}`);
-    this.apteService.executeScript(script, pays).subscribe({
+    this.apteService.executeScript(script, pays, { observe: 'response' }).subscribe({
       next: response => {
-        console.log(`Script executed successfully: ${script} for country: ${pays}`);
-        this.scriptOutput = response;
-        this.updateBugs();
-        console.log('executeScript - scriptOutput:', this.scriptOutput);
+        console.log('Response Status:', response.status);
+        console.log('Response Body:', response.body);
+        if (response.status === 200) {
+          console.log(`Script executed successfully: ${script} for country: ${pays}`);
+        } else {
+          console.log(`Unexpected response status: ${response.status}`);
+        }
       },
       error: err => {
         console.log(`Error executing script: ${script} for country: ${pays}`);
-        this.scriptOutput = err;
-        this.updateBugs();
         console.log('executeScript - error:', err);
       }
     });
   }
-
-  toggleMenu(country: Country): void {
-    country.menuVisible = !country.menuVisible;
-    console.log('toggleMenu - country:', country);
-    this.cdr.detectChanges();
+  
+  updateReportScript(): void {
+    console.log('updateReportScript called');
+  
+    this.apteService.report().subscribe({
+      next: (response: HttpResponse<any>) => {
+        console.log('Response reçu:', response);
+  
+        const message = response.body?.message; // Extraire le message du JSON
+  
+        if (message) {
+          this.reportScript.unshift(message);
+          if (this.reportScript.length > 10) {
+            this.reportScript.pop();
+          }
+        } else {
+          console.error('Le message reçu est vide ou null');
+        }
+  
+        console.log('reportScript updated:', this.reportScript);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error fetching report:', err);
+      }
+    });
   }
+  
+  
+  
+
 
   onLaunch(countryName: string): void {
     console.log(`Sauvegarde de SUNUPAC ${countryName}`);
     this.addSauvegarde(`Sauvegarde de SUNUPAC ${countryName}`);
     this.executeScript('launch.sh', countryName);
+    this.updateReportScript();
   }
 
   onLaunchAll(): void {
     console.log(`Sauvegarde des environnements Sunupac`);
     this.addSauvegarde(`Sauvegarde des environnements SUNUPAC`);
-    this.countries.forEach(country => this.executeScript('launch-all.sh', 'pays'));
+    this.executeScript('launch-all.sh', 'pays');
+    this.updateReportScript();
   }
 
   onMajAddonsSunupac(countryName: string): void {
     console.log(`Mise à jour des addons de Sunupac pour ${countryName}...`);
     this.addActivity(`Mise à jour des addons de SUNUPAC ${countryName}`);
     this.executeScript('maj_addons_sunupac.sh', countryName);
+    this.updateReportScript();
   }
 
   onMajDbSunupac(countryName: string): void {
     console.log(`Mise à jour de la base de données Sunupac pour ${countryName}...`);
     this.addActivity(`Mise à jour de la base de données de SUNUPAC ${countryName}`);
     this.executeScript('maj_db_sunupac.sh', countryName);
+    this.updateReportScript();
   }
 
   onMajDbSunulife(countryName: string): void {
     console.log(`Mise à jour de la base de données Sunulife pour ${countryName}...`);
     this.addActivity(`Mise à jour de la base de données de SUNULIFE ${countryName}`);
     this.executeScript('maj_db_sunulife.sh', countryName);
+    this.updateReportScript();
   }
 
   onPreprod(countryName: string): void {
     console.log(`Envoi en pré-production pour ${countryName}...`);
     this.addActivity(`Envoi en pré-production pour ${countryName}`);
     this.executeScript('preprod.sh', countryName);
+    this.updateReportScript();
   }
 }
