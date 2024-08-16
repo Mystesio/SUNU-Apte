@@ -5,19 +5,21 @@ import { Routes, RouterModule } from '@angular/router';
 
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 
-const routes: Routes =[
+const routes: Routes = [
   {
     path: '',
-    redirectTo: 'dashboard',
+    redirectTo: 'login',  // Ou 'dashboard' si vous voulez rediriger vers le dashboard par défaut
     pathMatch: 'full',
-  }, {
+  },
+  {
     path: '',
     component: AdminLayoutComponent,
     children: [{
       path: '',
       loadChildren: () => import('./layouts/admin-layout/admin-layout.module').then(m => m.AdminLayoutModule)
     }]
-  }
+  },
+  { path: '**', redirectTo: 'login' } // Optionnel: Redirige les chemins non définis vers le login
 ];
 
 @NgModule({
@@ -28,7 +30,6 @@ const routes: Routes =[
        useHash: true
     })
   ],
-  exports: [
-  ],
+  exports: [RouterModule]
 })
 export class AppRoutingModule { }

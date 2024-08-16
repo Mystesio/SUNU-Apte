@@ -109,6 +109,13 @@ export class NavbarComponent implements OnInit {
         }
     };
 
+    logout(): void {
+        // Supprimez les informations d'authentification (par exemple, token) ici si nécessaire
+        localStorage.removeItem('token');
+        // Rediriger vers la page de connexion
+        this.router.navigate(['login']);
+      }
+
     getTitle(){
       var titlee = this.location.prepareExternalUrl(this.location.path());
       if(titlee.charAt(0) === '#'){

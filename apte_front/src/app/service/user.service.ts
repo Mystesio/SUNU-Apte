@@ -34,12 +34,9 @@ export class UserService {
 
   
   authenticate(email: string, password: string): Observable<any> {
-    const url = `${this.baseUrl}/authenticate`;
-    const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-    const body = { email, password };
-
-    return this.http.post(url, body, { headers });
+    return this.http.post<any>('http://localhost:8086/users/authenticate', { email, password }, { responseType: 'text' as 'json' });
   }
+  
 
   
 }
