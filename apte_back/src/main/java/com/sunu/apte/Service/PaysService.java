@@ -25,20 +25,9 @@ public class PaysService {
                 .collect(Collectors.toList());
     }
 
-    public String listePays() throws IOException, InterruptedException {
-        String script = "liste_pays.sh";
-        String pays = "pays";  // Non utilisé pour ce script
-
-        // Assurez-vous que executeScript est une méthode qui exécute le script et renvoie la sortie
-        return apteService.executeScript(script, pays);
-    }
-
     public List<Pays> updatePays() throws IOException, InterruptedException {
-        // Exécuter le script liste_pays.sh
-        listePays(); 
-        // Récupérer la sortie du script
-        String lastOutput = apteService.getLastOutputMessage(); 
-       
+        // Exécuter le script liste_pays.sh et récupérer la sortie
+        String lastOutput = apteService.executeScript("liste_pays.sh", "pays");
 
         // Filtrer et récupérer la ligne contenant les instances SUNUPAC déployées
         String activeLine = lastOutput.lines()
@@ -46,9 +35,10 @@ public class PaysService {
                 .findFirst()
                 .orElse("");
 
-
-
+        // Extraire les noms des pays actifs à partir de la ligne filtrée
         List<String> activeCountries = List.of(activeLine.replace("Liste des instances SUNUPAC déployés:", "").trim().split(" "));
+
+        // Mettre à jour l'état Sunupac pour chaque pays
         List<Pays> countries = getAllPays();
         countries.forEach(country -> {
             String countryName = country.getName();
@@ -58,8 +48,9 @@ public class PaysService {
                 country.setSunupacState(false);
             }
         });
+
+        // Retourner la liste des pays mise à jour
         return countries;
     }
 }
-
 

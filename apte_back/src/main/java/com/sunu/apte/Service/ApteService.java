@@ -7,17 +7,14 @@ import java.io.*;
 @Service
 public class ApteService {
 
-    private String lastOutputMessage = "";
-    private String filteredOutputMessage = "";
+    
 
     public String executeScript(String script, String pays) throws IOException, InterruptedException {
         if (script == null || script.isEmpty()) {
-            lastOutputMessage = "Le chemin du script n'a pas été spécifié.";
-            return lastOutputMessage;
+            return "Le chemin du script n'a pas été spécifié.";
         }
         if (pays == null || pays.isEmpty()) {
-            lastOutputMessage = "Le pays n'a pas été spécifié.";
-            return lastOutputMessage;
+            return "Le pays n'a pas été spécifié.";
         }
 
         String username = "sunupac";
@@ -37,8 +34,6 @@ public class ApteService {
             Process process = Runtime.getRuntime().exec("ssh-keygen -R " + host);
             process.waitFor();
 
-            output.append("Clé d'hôte supprimée pour ").append(host).append("\n");
-
             session = jsch.getSession(username, host, port);
             session.setPassword(password);
 
@@ -48,11 +43,8 @@ public class ApteService {
 
             session.connect();
 
-            if (session.isConnected()) {
-                output.append("Connexion SSH établie avec ").append(host).append("\n");
-            } else {
-                lastOutputMessage = "Échec de l'établissement de la connexion SSH avec " + host + "\n";
-                return lastOutputMessage;
+            if (!session.isConnected()) {
+                return "Échec de l'établissement de la connexion SSH avec " + host + "\n";
             }
 
             channel = (ChannelExec) session.openChannel("exec");
@@ -71,9 +63,7 @@ public class ApteService {
             writer.flush();
 
             String line;
-            StringBuilder errorOutput = new StringBuilder();
 
-            // Lire le flux de sortie jusqu'à la fin de l'exécution du script
             while ((line = reader.readLine()) != null) {
                 output.append(line).append("\n");
                 if (line.startsWith("Echec") || 
@@ -87,12 +77,6 @@ public class ApteService {
                 }
             }
 
-            // Lire le flux d'erreur jusqu'à la fin de l'exécution du script
-            BufferedReader errReader = new BufferedReader(new InputStreamReader(channel.getErrStream()));
-            while ((line = errReader.readLine()) != null) {
-                errorOutput.append(line).append("\n");
-            }
-
             int exitCode = channel.getExitStatus();
             if (exitCode == 0) {
                 output.append("Script exécuté avec succès\n");
@@ -100,50 +84,19 @@ public class ApteService {
                 output.append("Échec de l'exécution du script\n");
             }
 
-        } catch (JSchException e) {
-            lastOutputMessage = "Erreur de connexion SSH : " + e.getMessage() + "\n";
-        } catch (IOException e) {
-            lastOutputMessage = "Erreur d'IO : " + e.getMessage() + "\n";
-        } catch (InterruptedException e) {
-            lastOutputMessage = "Erreur d'interruption : " + e.getMessage() + "\n";
-            Thread.currentThread().interrupt(); // Réinterrompt le thread courant
+        } catch (JSchException | IOException | InterruptedException e) {
+            return "Erreur lors de l'exécution du script : " + e.getMessage();
         } finally {
             if (channel != null && channel.isConnected()) {
                 channel.disconnect();
-                output.append("Canal SSH déconnecté\n");
             }
             if (session != null && session.isConnected()) {
                 session.disconnect();
-                output.append("Session SSH déconnectée\n");
             }
         }
 
-        lastOutputMessage = output.toString(); // Mettre à jour le message de sortie du script
-        filteredOutputMessage = filterOutputMessage(lastOutputMessage); // Mettre à jour le message filtré
-        return filteredOutputMessage; // Retourner le message filtré
+        return filteredOutput.length() > 0 ? filteredOutput.toString() : output.toString();
     }
 
-    public String getLastOutputMessage() {
-        return lastOutputMessage;
-    }
-
-    public String getFilteredOutputMessage() {
-        return filteredOutputMessage;
-    }
-
-    private String filterOutputMessage(String message) {
-        StringBuilder filteredOutput = new StringBuilder();
-        for (String line : message.split("\n")) {
-            if (line.startsWith("Echec") || 
-                line.startsWith("Il y a") || 	
-                line.startsWith("Webservice Introuvable") || 
-                line.startsWith("Erreur") || 
-                line.startsWith("Addons Introuvable") || 
-                line.startsWith("backup introuvable") || 
-                line.startsWith("erreur")) {
-                filteredOutput.append(line).append("\n");
-            }
-        }
-        return filteredOutput.toString();
-    }
+    // Supprimez la méthode getFilteredOutputMessage(), car nous ne l'utilisons plus
 }
