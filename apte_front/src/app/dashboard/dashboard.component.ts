@@ -100,7 +100,7 @@ export class DashboardComponent implements OnInit {
   onLaunchAll(): void {
     console.log(`Sauvegarde des environnements Sunupac`);
     this.addSauvegarde(`Sauvegarde des environnements SUNUPAC`);
-    this.executeScript('launch-all.sh', 'Pays');
+    this.executeScript('launch-all.sh', 'pays');
   }
 
   onMajAddonsSunupac(countryName: string): void {
